@@ -3,21 +3,29 @@
 ### Installs the latest pk cli app from github releases
 ####
 
-set -e
 echo "USING OS $OSTYPE"
 
 GIT_USER=pkhubio
 GIT_PROJECT=pkcli
 BASE_URL=https://api.github.com/repos/$GIT_USER/$GIT_PROJECT/releases/latest
+RELEASES_URL=https://github.com/$GIT_USER/$GIT_PROJECT/releases/
+CONTACT_URL=https://pkhub.io/contact
 
 ##https://github.com/$GIT_USER/$GIT_PROJECT/releases/latest
 
 RELEASE=latest
 BINARY=bin_file_on_release
 
+execution_failed () {
+    echo "Could not download and install the binary for $OS-$ARCH"
+    echo "Please manually look for it in our releases page at:"
+    echo "$RELEASES_URL"
+    echo "Or contact us at:"
+    echo "$CONTACT_URL"
+    exit 1
+}
 
 check_deps () {
-set +e
 if command -v apk
 then
  command -v apk
@@ -46,7 +54,7 @@ fi
 
 check_deps
 
-set -e
+trap execution_failed ERR
 
 if [ -z "$OS" ]; then
 case "$OSTYPE" in
@@ -66,10 +74,9 @@ else
     ARCH="386"
 fi
 
+DOWNLOAD_URL=$(curl $BASE_URL 2>/dev/null | grep "$OS-$ARCH" | grep -Eo '(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]')
+
 echo "OS $OS ARCH $ARCH"
-DOWNLOAD_URL=$(curl  $BASE_URL | grep "$OS-$ARCH" | grep -Eo '(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]')
-
-
 echo "Download URL: $DOWNLOAD_URL"
 
 wget -O pk "$DOWNLOAD_URL"
